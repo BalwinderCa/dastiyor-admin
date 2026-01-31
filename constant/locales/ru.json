@@ -1,0 +1,38 @@
+{
+  "appName": "Дастиёр",
+  "appTagline": "Маркетплейс услуг",
+  "login": {
+    "title": "Войти",
+    "subtitle": "Войдите в аккаунт для доступа в панель администратора Дастиёр",
+    "email": "Email",
+    "password": "Пароль",
+    "rememberMe": "Запомнить меня",
+    "forgotPassword": "Забыли пароль?",
+    "signIn": "Войти",
+    "heroTitle": "Дастиёр —",
+    "heroSubtitle": "Маркетплейс услуг",
+    "invalidEmail": "Некорректный email",
+    "emailRequired": "Email обязателен",
+    "passwordRequired": "Пароль обязателен",
+    "invalidCredentials": "Неверный email или пароль"
+  },
+  "menu": {
+    "dashboard": "Панель (аналитика)",
+    "users": "Управление пользователями",
+    "tasks": "Управление задачами",
+    "categories": "Категории",
+    "subscriptions": "Подписки и платежи",
+    "reviews": "Отзывы и жалобы",
+    "moderation": "Инструменты модерации"
+  },
+  "footer": {
+    "copyright": "© {year} Дастиёр. Все права защищены.",
+    "marketplace": "Маркетплейс услуг —"
+  },
+  "common": {
+    "logout": "Выйти",
+    "profile": "Профиль",
+    "settings": "Настройки",
+    "admin": "Администратор"
+  }
+}

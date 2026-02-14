@@ -1,0 +1,57 @@
+import { prisma } from "@/lib/prisma";
+import { NextResponse } from "next/server";
+
+export async function GET(request, { params }) {
+    try {
+        const task = await prisma.task.findUnique({
+            where: { id: params.id },
+            include: {
+                user: { select: { id: true, fullName: true, email: true } },
+            },
+        });
+
+        if (!task) {
+            return NextResponse.json({ error: "Task not found" }, { status: 404 });
+        }
+        return NextResponse.json(task);
+    } catch (e) {
+        return NextResponse.json({ error: e.message }, { status: 500 });
+    }
+}
+
+export async function PUT(request, { params }) {
+    try {
+        const body = await request.json();
+        // Allow updating all fields
+        const { title, description, category, budgetType, city, status, userId } = body;
+
+        const data = {
+            title,
+            description,
+            category,
+            budgetType,
+            city,
+            status,
+        };
+
+        if (userId) data.userId = userId;
+
+        const updatedTask = await prisma.task.update({
+            where: { id: params.id },
+            data,
+        });
+
+        return NextResponse.json(updatedTask);
+    } catch (e) {
+        return NextResponse.json({ error: e.message }, { status: 500 });
+    }
+}
+
+export async function DELETE(request, { params }) {
+    try {
+        await prisma.task.delete({ where: { id: params.id } });
+        return NextResponse.json({ success: true });
+    } catch (e) {
+        return NextResponse.json({ error: e.message }, { status: 500 });
+    }
+}

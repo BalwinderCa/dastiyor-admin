@@ -1,0 +1,38 @@
+{
+  "appName": "Дастиёр",
+  "appTagline": "Бозори хидматҳо",
+  "login": {
+    "title": "Вуруд",
+    "subtitle": "Ба ҳисоби худ ворид шавед барои дастрасӣ ба панели маъмурии Дастиёр",
+    "email": "Email",
+    "password": "Парол",
+    "rememberMe": "Маро дар ёд дор",
+    "forgotPassword": "Паролро фаромӯш кардед?",
+    "signIn": "Вуруд",
+    "heroTitle": "Дастиёр —",
+    "heroSubtitle": "Бозори хидматҳо",
+    "invalidEmail": "Email нодуруст",
+    "emailRequired": "Email зарур аст",
+    "passwordRequired": "Парол зарур аст",
+    "invalidCredentials": "Email ё парол нодуруст"
+  },
+  "menu": {
+    "dashboard": "Панел (аналитика)",
+    "users": "Идораи корбарон",
+    "tasks": "Идораи вазифаҳо",
+    "categories": "Категорияҳо",
+    "subscriptions": "Обуна ва пардохтҳо",
+    "reviews": "Назариёт ва шикоятҳо",
+    "moderation": "Абзорҳои модератсия"
+  },
+  "footer": {
+    "copyright": "© {year} Дастиёр. Ҳамаи ҳуқуқҳо ҳифз шудаанд.",
+    "marketplace": "Бозори хидматҳо —"
+  },
+  "common": {
+    "logout": "Баромад",
+    "profile": "Профил",
+    "settings": "Танзимот",
+    "admin": "Маъмур"
+  }
+}

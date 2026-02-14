@@ -4,7 +4,7 @@ const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 import useDarkMode from "@/hooks/useDarkMode";
 import { colors } from "@/constant/data";
 
-const DonutChart = ({ height = 113, series = [70, 30], labels = ["Complete", "Left"] }) => {
+const DonutChart = ({ height = 113 }) => {
   const [isDark] = useDarkMode();
 
   function colorOpacity(color, opacity) {
@@ -13,8 +13,10 @@ const DonutChart = ({ height = 113, series = [70, 30], labels = ["Complete", "Le
     return color + _opacity.toString(16).toUpperCase();
   }
 
+  const series = [70, 30];
+
   const options = {
-    labels: labels,
+    labels: ["Complete", "Left"],
     dataLabels: {
       enabled: false,
     },
@@ -48,7 +50,7 @@ const DonutChart = ({ height = 113, series = [70, 30], labels = ["Complete", "Le
               color: isDark ? "#cbd5e1" : "#475569",
               formatter(val) {
                 // eslint-disable-next-line radix
-                return `${parseInt(val)}`;
+                return `${parseInt(val)}%`;
               },
             },
             total: {
@@ -57,7 +59,7 @@ const DonutChart = ({ height = 113, series = [70, 30], labels = ["Complete", "Le
               label: "",
               color: isDark ? "#cbd5e1" : "#475569",
               formatter() {
-                return series.reduce((a, b) => a + b, 0);
+                return "70";
               },
             },
           },

@@ -39,37 +39,3 @@ export async function GET(request) {
     );
   }
 }
-
-export async function POST(request) {
-  try {
-    const body = await request.json();
-    const { title, description, category, budgetType, city, userId, status } = body;
-
-    // Basic validation
-    if (!title || !description || !category || !city || !userId) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 }
-      );
-    }
-
-    const newTask = await prisma.task.create({
-      data: {
-        title,
-        description,
-        category,
-        budgetType: budgetType || "negotiable",
-        city,
-        userId,
-        status: status || "OPEN",
-      },
-    });
-
-    return NextResponse.json(newTask, { status: 201 });
-  } catch (e) {
-    return NextResponse.json(
-      { error: e.message },
-      { status: 500 }
-    );
-  }
-}

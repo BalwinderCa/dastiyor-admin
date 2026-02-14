@@ -1,10 +1,7 @@
 import React, { Fragment, useState } from "react";
 import { Dialog, Transition, Combobox } from "@headlessui/react";
 import Icon from "@/components/ui/Icon";
-import { useTranslation } from "@/context/LanguageContext";
-
 const SearchModal = () => {
-  const { t } = useTranslation();
   let [isOpen, setIsOpen] = useState(false);
 
   function closeModal() {
@@ -58,7 +55,7 @@ const SearchModal = () => {
         >
           <>
             <Icon icon="heroicons-outline:search" />
-            <span className="xl:inline-block hidden">{t("common.search")}</span>
+            <span className="xl:inline-block hidden">Search... </span>
           </>
         </button>
       </div>
@@ -100,7 +97,7 @@ const SearchModal = () => {
                       </div>
                       <Combobox.Input
                         className="bg-transparent outline-none focus:outline-none border-none w-full flex-1 dark:placeholder:text-slate-300 dark:text-slate-200"
-                        placeholder={t("common.search")}
+                        placeholder="Search..."
                         onChange={(event) => setQuery(event.target.value)}
                       />
                     </div>
@@ -114,7 +111,7 @@ const SearchModal = () => {
                           <div>
                             <div className=" text-base py-2 px-4">
                               <p className="text-slate-500 text-base dark:text-white">
-                                {t("common.noResult")}
+                                No result found
                               </p>
                             </div>
                           </div>
@@ -124,10 +121,11 @@ const SearchModal = () => {
                           <Combobox.Option key={i}>
                             {({ active }) => (
                               <div
-                                className={`px-4 text-[15px] font-normal capitalize py-2 ${active
+                                className={`px-4 text-[15px] font-normal capitalize py-2 ${
+                                  active
                                     ? "bg-slate-900 dark:bg-slate-600 dark:bg-opacity-60 text-white"
                                     : "text-slate-900 dark:text-white"
-                                  }`}
+                                }`}
                               >
                                 <span>{item.name}</span>
                               </div>

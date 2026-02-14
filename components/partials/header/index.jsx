@@ -11,6 +11,7 @@ import Logo from "./Tools/Logo";
 import SearchModal from "./Tools/SearchModal";
 import Profile from "./Tools/Profile";
 import Notification from "./Tools/Notification";
+import Message from "./Tools/Message";
 import Language from "./Tools/Language";
 import useRtl from "@/hooks/useRtl";
 import useMobileMenu from "@/hooks/useMobileMenu";
@@ -57,10 +58,11 @@ const Header = ({ className = "custom-class" }) => {
       <div
         className={` app-header md:px-6 px-[15px]  dark:bg-slate-800 shadow-base dark:shadow-base3 bg-white
         ${borderSwicthClass()}
-             ${menuType === "horizontal" && width > breakpoints.xl
-            ? "py-1"
-            : "md:py-6 py-3"
-          }
+             ${
+               menuType === "horizontal" && width > breakpoints.xl
+                 ? "py-1"
+                 : "md:py-6 py-3"
+             }
         `}
       >
         <div className="flex justify-between items-center h-full">
@@ -117,6 +119,7 @@ const Header = ({ className = "custom-class" }) => {
             <Language />
             <SwitchDark />
 
+            {width >= breakpoints.md && <Message />}
             {width >= breakpoints.md && <Notification />}
             {width >= breakpoints.md && <Profile />}
             {width <= breakpoints.md && (

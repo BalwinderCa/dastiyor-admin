@@ -36,29 +36,63 @@ const Profile = () => {
   const dispatch = useDispatch();
   const router = useRouter();
 
-  const { t } = useTranslation();
-
   const ProfileMenu = [
     {
-      label: t("common.profile"),
+      label: "Profile",
       icon: "heroicons-outline:user",
+
       action: () => {
         router.push("/profile");
       },
     },
     {
-      label: t("common.settings"),
-      icon: "heroicons-outline:cog",
+      label: "Chat",
+      icon: "heroicons-outline:chat",
       action: () => {
-        router.push("/settings/profile");
+        router.push("/chat");
       },
     },
     {
-      label: t("common.logout"),
+      label: "Email",
+      icon: "heroicons-outline:mail",
+      action: () => {
+        router.push("email");
+      },
+    },
+    {
+      label: "Todo",
+      icon: "heroicons-outline:clipboard-check",
+      action: () => {
+        router.push("/todo");
+      },
+    },
+    {
+      label: "Settings",
+      icon: "heroicons-outline:cog",
+      action: () => {
+        router.push("/settings");
+      },
+    },
+    {
+      label: "Price",
+      icon: "heroicons-outline:credit-card",
+      action: () => {
+        router.push("/pricing");
+      },
+    },
+    {
+      label: "Faq",
+      icon: "heroicons-outline:information-circle",
+      action: () => {
+        router.push("/faq");
+      },
+    },
+    {
+      label: "Logout",
       icon: "heroicons-outline:login",
       action: () => {
         dispatch(handleLogout(false));
-        router.push("/login"); // Fixed redirection to login page
+        router.push("/login");
       },
     },
   ];
@@ -70,13 +104,15 @@ const Profile = () => {
           {({ active }) => (
             <div
               onClick={() => item.action()}
-              className={`${active
-                ? "bg-slate-100 text-slate-900 dark:bg-slate-600 dark:text-slate-300 dark:bg-opacity-50"
-                : "text-slate-600 dark:text-slate-300"
-                } block     ${item.hasDivider
+              className={`${
+                active
+                  ? "bg-slate-100 text-slate-900 dark:bg-slate-600 dark:text-slate-300 dark:bg-opacity-50"
+                  : "text-slate-600 dark:text-slate-300"
+              } block     ${
+                item.hasDivider
                   ? "border-t border-slate-100 dark:border-slate-700"
                   : ""
-                }`}
+              }`}
             >
               <div className={`block cursor-pointer px-4 py-2`}>
                 <div className="flex items-center">

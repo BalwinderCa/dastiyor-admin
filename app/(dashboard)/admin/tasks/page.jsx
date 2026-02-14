@@ -1,454 +1,96 @@
 "use client";
 
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState } from "react";
 import Card from "@/components/ui/Card";
-import Icon from "@/components/ui/Icon";
-import Modal from "@/components/ui/Modal";
-import Textinput from "@/components/ui/Textinput";
-import Textarea from "@/components/ui/Textarea";
-import Select from "@/components/ui/Select";
-import Button from "@/components/ui/Button";
-import Tooltip from "@/components/ui/Tooltip";
-import GlobalFilter from "@/components/partials/table/GlobalFilter";
 import HomeBredCurbs from "@/components/partials/HomeBredCurbs";
-import {
-  useTable,
-  useRowSelect,
-  useSortBy,
-  useGlobalFilter,
-  usePagination,
-} from "react-table";
-
-const IndeterminateCheckbox = React.forwardRef(
-  ({ indeterminate, ...rest }, ref) => {
-    const defaultRef = React.useRef();
-    const resolvedRef = ref || defaultRef;
-
-    React.useEffect(() => {
-      resolvedRef.current.indeterminate = indeterminate;
-    }, [resolvedRef, indeterminate]);
-
-    return (
-      <input
-        type="checkbox"
-        ref={resolvedRef}
-        {...rest}
-        className="table-checkbox"
-      />
-    );
-  }
-);
+import Icon from "@/components/ui/Icon";
 
 export default function AdminTasks() {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  const [modalOpen, setModalOpen] = useState(false);
-  const [currentTask, setCurrentTask] = useState(null);
-  const [formData, setFormData] = useState({ title: "", description: "", category: "", city: "", status: "OPEN", budgetType: "negotiable", userId: "" });
-
-  const fetchTasks = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      // Fetch larger set for client-side pagination
-      const res = await fetch(`/api/tasks?limit=1000`);
-      if (!res.ok) throw new Error(await res.text());
-      const json = await res.json();
-      setTasks(json.data || []);
-    } catch (e) {
-      setError(e.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, totalPages: 0 });
 
   useEffect(() => {
-    fetchTasks();
-  }, []);
-
-  const handleCreate = () => {
-    setCurrentTask(null);
-    setFormData({ title: "", description: "", category: "", city: "", status: "OPEN", budgetType: "negotiable", userId: "" });
-    setModalOpen(true);
-  };
-
-  const handleEdit = (task) => {
-    setCurrentTask(task);
-    setFormData({
-      title: task.title || "",
-      description: task.description || "",
-      category: task.category || "",
-      city: task.city || "",
-      status: task.status || "OPEN",
-      budgetType: task.budgetType || "negotiable",
-      userId: task.userId || ""
-    });
-    setModalOpen(true);
-  };
-
-  const handleDelete = async (id) => {
-    if (!confirm("Are you sure you want to delete this task?")) return;
-    try {
-      const res = await fetch(`/api/tasks/${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error(await res.text());
-      fetchTasks();
-    } catch (e) {
-      alert(e.message);
-    }
-  };
-
-  const handleSubmit = async () => {
-    const url = currentTask ? `/api/tasks/${currentTask.id}` : "/api/tasks";
-    const method = currentTask ? "PUT" : "POST";
-    const body = { ...formData };
-
-    try {
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || res.statusText);
+    let cancelled = false;
+    async function fetchTasks() {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await fetch(`/api/tasks?page=${pagination.page}&limit=${pagination.limit}`);
+        if (!res.ok) throw new Error(await res.text());
+        const json = await res.json();
+        if (!cancelled) {
+          setTasks(json.data || []);
+          setPagination((p) => ({ ...p, ...json.pagination }));
+        }
+      } catch (e) {
+        if (!cancelled) setError(e.message);
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-      setModalOpen(false);
-      fetchTasks();
-    } catch (e) {
-      alert(e.message);
     }
-  };
-
-  const COLUMNS = [
-    {
-      Header: "Task",
-      accessor: "title",
-      Cell: (row) => (
-        <div className="flex flex-col">
-          <span className="font-medium text-slate-900 dark:text-white capitalize">{row?.cell?.value}</span>
-          <span className="text-sm text-slate-500 dark:text-slate-400 line-clamp-1">{row?.row?.original?.description}</span>
-        </div>
-      ),
-    },
-    {
-      Header: "Category",
-      accessor: "category",
-      Cell: (row) => <span className="text-sm text-slate-600 dark:text-slate-300">{row?.cell?.value}</span>,
-    },
-    {
-      Header: "Status",
-      accessor: "status",
-      Cell: (row) => {
-        const status = row?.cell?.value;
-        const badgeClass = status === "COMPLETED" ? "bg-success-500/10 text-success-500" :
-          status === "IN_PROGRESS" ? "bg-warning-500/10 text-warning-500" :
-            status === "CANCELLED" ? "bg-danger-500/10 text-danger-500" :
-              "bg-primary-500/10 text-primary-500";
-        return <span className={`badge ${badgeClass}`}>{status}</span>;
-      },
-    },
-    {
-      Header: "Author",
-      accessor: "user.fullName",
-      Cell: (row) => (
-        <div className="flex flex-col">
-          <span className="text-sm text-slate-600 dark:text-slate-300">{row?.cell?.value || "Unknown"}</span>
-          <span className="text-xs text-slate-500">{row?.row?.original?.user?.email}</span>
-        </div>
-      ),
-    },
-    {
-      Header: "Action",
-      accessor: "action",
-      Cell: (row) => (
-        <div className="flex space-x-3 rtl:space-x-reverse">
-          <Tooltip content="Edit" placement="top" arrow animation="shift-away">
-            <button className="action-btn" type="button" onClick={() => handleEdit(row.row.original)}>
-              <Icon icon="heroicons:pencil-square" />
-            </button>
-          </Tooltip>
-          <Tooltip content="Delete" placement="top" arrow animation="shift-away" theme="danger">
-            <button className="action-btn" type="button" onClick={() => handleDelete(row.row.original.id)}>
-              <Icon icon="heroicons:trash" />
-            </button>
-          </Tooltip>
-        </div>
-      ),
-    },
-  ];
-
-  const columns = useMemo(() => COLUMNS, []);
-  const data = useMemo(() => tasks, [tasks]);
-
-  const tableInstance = useTable(
-    {
-      columns,
-      data,
-      initialState: { pageIndex: 0, pageSize: 10 },
-    },
-    useGlobalFilter,
-    useSortBy,
-    usePagination,
-    useRowSelect,
-    (hooks) => {
-      hooks.visibleColumns.push((columns) => [
-        {
-          id: "selection",
-          Header: ({ getToggleAllRowsSelectedProps }) => (
-            <div>
-              <IndeterminateCheckbox {...getToggleAllRowsSelectedProps()} />
-            </div>
-          ),
-          Cell: ({ row }) => (
-            <div>
-              <IndeterminateCheckbox {...row.getToggleRowSelectedProps()} />
-            </div>
-          ),
-        },
-        ...columns,
-      ]);
-    }
-  );
-
-  const {
-    getTableProps,
-    getTableBodyProps,
-    headerGroups,
-    page,
-    nextPage,
-    previousPage,
-    canNextPage,
-    canPreviousPage,
-    pageOptions,
-    state,
-    gotoPage,
-    pageCount,
-    setPageSize,
-    setGlobalFilter,
-    prepareRow,
-  } = tableInstance;
-
-  const { globalFilter, pageIndex, pageSize } = state;
+    fetchTasks();
+    return () => { cancelled = true; };
+  }, [pagination.page, pagination.limit]);
 
   return (
     <div>
       <HomeBredCurbs title="Tasks management" />
-      <Card noborder>
-        <div className="md:flex justify-between items-center mb-6">
-          <Button text="Add Task" className="btn-success btn-sm" onClick={handleCreate} />
-          <GlobalFilter filter={globalFilter} setFilter={setGlobalFilter} />
-        </div>
+      <Card title="Tasks">
+        {error && (
+          <p className="text-danger text-sm mb-4 flex items-center gap-2">
+            <Icon icon="heroicons-outline:exclamation-circle" className="text-lg" />
+            {error} — ensure .env has DATABASE_URL and run: npm run db:push
+          </p>
+        )}
         {loading ? (
-          <div className="p-5 text-center">Loading...</div>
+          <p className="text-slate-500 dark:text-slate-400 py-4">Loading...</p>
         ) : (
-          <>
-            <div className="overflow-x-auto -mx-6">
-              <div className="inline-block min-w-full align-middle">
-                <div className="overflow-hidden ">
-                  <table
-                    className="min-w-full divide-y divide-slate-100 table-fixed dark:divide-slate-700"
-                    {...getTableProps()}
-                  >
-                    <thead className="bg-slate-200 dark:bg-slate-700">
-                      {headerGroups.map((headerGroup) => {
-                        const { key, ...restHeaderGroupProps } = headerGroup.getHeaderGroupProps();
-                        return (
-                          <tr key={key} {...restHeaderGroupProps}>
-                            {headerGroup.headers.map((column) => {
-                              const { key, ...restColumn } = column.getHeaderProps(column.getSortByToggleProps());
-                              return (
-                                <th
-                                  key={key}
-                                  {...restColumn}
-                                  scope="col"
-                                  className=" table-th "
-                                >
-                                  {column.render("Header")}
-                                  <span>
-                                    {column.isSorted
-                                      ? column.isSortedDesc
-                                        ? " 🔽"
-                                        : " 🔼"
-                                      : ""}
-                                  </span>
-                                </th>
-                              );
-                            })}
-                          </tr>
-                        );
-                      })}
-                    </thead>
-                    <tbody
-                      className="bg-white divide-y divide-slate-100 dark:bg-slate-800 dark:divide-slate-700"
-                      {...getTableBodyProps()}
-                    >
-                      {page.map((row) => {
-                        prepareRow(row);
-                        const { key, ...restRowProps } = row.getRowProps();
-                        return (
-                          <tr key={key} {...restRowProps}>
-                            {row.cells.map((cell) => {
-                              const { key, ...restCellProps } = cell.getCellProps();
-                              return (
-                                <td
-                                  key={key}
-                                  {...restCellProps}
-                                  className="table-td"
-                                >
-                                  {cell.render("Cell")}
-                                </td>
-                              );
-                            })}
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-            <div className="md:flex md:space-y-0 space-y-5 justify-between mt-6 items-center">
-              <div className=" flex items-center space-x-3 rtl:space-x-reverse">
-                <select
-                  className="form-control py-2 w-max"
-                  value={pageSize}
-                  onChange={(e) => setPageSize(Number(e.target.value))}
-                >
-                  {[10, 25, 50, 100].map((pageSize) => (
-                    <option key={pageSize} value={pageSize}>
-                      Show {pageSize}
-                    </option>
-                  ))}
-                </select>
-                <span className="text-sm font-medium text-slate-600 dark:text-slate-300">
-                  Page{" "}
-                  <span>
-                    {pageIndex + 1} of {pageOptions.length}
-                  </span>
-                </span>
-              </div>
-              <ul className="flex items-center  space-x-3  rtl:space-x-reverse flex-wrap">
-                <li className="text-xl leading-4 text-slate-900 dark:text-white rtl:rotate-180">
-                  <button
-                    className={` ${!canPreviousPage ? "opacity-50 cursor-not-allowed" : ""
-                      }`}
-                    onClick={() => gotoPage(0)}
-                    disabled={!canPreviousPage}
-                  >
-                    <Icon icon="heroicons:chevron-double-left-solid" />
-                  </button>
-                </li>
-                <li className="text-sm leading-4 text-slate-900 dark:text-white rtl:rotate-180">
-                  <button
-                    className={` ${!canPreviousPage ? "opacity-50 cursor-not-allowed" : ""
-                      }`}
-                    onClick={() => previousPage()}
-                    disabled={!canPreviousPage}
-                  >
-                    Prev
-                  </button>
-                </li>
-                {pageOptions.map((page, pageIdx) => (
-                  <li key={pageIdx}>
-                    <button
-                      href="#"
-                      aria-current="page"
-                      className={` ${pageIdx === pageIndex
-                          ? "bg-slate-900 dark:bg-slate-600  dark:text-slate-200 text-white font-medium "
-                          : "bg-slate-100 dark:bg-slate-700 dark:text-slate-400 text-slate-900  font-normal  "
-                        }    text-sm rounded leading-[16px] flex h-6 w-6 items-center justify-center transition-all duration-150`}
-                      onClick={() => gotoPage(pageIdx)}
-                    >
-                      {page + 1}
-                    </button>
-                  </li>
-                ))}
-                <li className="text-sm leading-4 text-slate-900 dark:text-white rtl:rotate-180">
-                  <button
-                    className={` ${!canNextPage ? "opacity-50 cursor-not-allowed" : ""
-                      }`}
-                    onClick={() => nextPage()}
-                    disabled={!canNextPage}
-                  >
-                    Next
-                  </button>
-                </li>
-                <li className="text-xl leading-4 text-slate-900 dark:text-white rtl:rotate-180">
-                  <button
-                    onClick={() => gotoPage(pageCount - 1)}
-                    disabled={!canNextPage}
-                    className={` ${!canNextPage ? "opacity-50 cursor-not-allowed" : ""
-                      }`}
-                  >
-                    <Icon icon="heroicons:chevron-double-right-solid" />
-                  </button>
-                </li>
-              </ul>
-            </div>
-          </>
+          <div className="overflow-x-auto">
+            <table className="table-fixed w-full">
+              <thead>
+                <tr className="border-b border-slate-200 dark:border-slate-700">
+                  <th className="text-start py-3 px-4 text-slate-600 dark:text-slate-300 font-medium">Task</th>
+                  <th className="text-start py-3 px-4 text-slate-600 dark:text-slate-300 font-medium">Category</th>
+                  <th className="text-start py-3 px-4 text-slate-600 dark:text-slate-300 font-medium">Status</th>
+                  <th className="text-start py-3 px-4 text-slate-600 dark:text-slate-300 font-medium">Author / Responses</th>
+                </tr>
+              </thead>
+              <tbody>
+                {tasks.length === 0 ? (
+                  <tr className="border-b border-slate-200 dark:border-slate-700">
+                    <td colSpan={4} className="py-3 px-4 text-slate-500 dark:text-slate-400 text-sm">
+                      No tasks yet. Database is connected; add tasks via your main app or seed script.
+                    </td>
+                  </tr>
+                ) : (
+                  tasks.map((t) => (
+                    <tr key={t.id} className="border-b border-slate-200 dark:border-slate-700">
+                      <td className="py-3 px-4">
+                        <div className="font-medium text-slate-900 dark:text-white">{t.title}</div>
+                        <div className="text-sm text-slate-500 dark:text-slate-400 line-clamp-1">{t.description}</div>
+                      </td>
+                      <td className="py-3 px-4 text-sm">{t.category}</td>
+                      <td className="py-3 px-4">
+                        <span className="badge bg-primary-500/10 text-primary-500">{t.status}</span>
+                      </td>
+                      <td className="py-3 px-4 text-sm text-slate-600 dark:text-slate-300">
+                        {t.user?.fullName} / {t._count?.responses ?? 0} responses
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {!loading && pagination.totalPages > 1 && (
+          <p className="text-slate-500 dark:text-slate-400 text-sm mt-4">
+            Page {pagination.page} of {pagination.totalPages} ({pagination.total} total)
+          </p>
         )}
       </Card>
-
-      <Modal
-        activeModal={modalOpen}
-        onClose={() => setModalOpen(false)}
-        title={currentTask ? "Edit Task" : "Add Task"}
-        footerContent={
-          <Button
-            text={currentTask ? "Update" : "Create"}
-            className="btn-dark"
-            onClick={handleSubmit}
-          />
-        }
-      >
-        <div className="space-y-4">
-          <Textinput
-            label="Title"
-            value={formData.title}
-            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-            placeholder="Task Title"
-          />
-          <Textarea
-            label="Description"
-            value={formData.description}
-            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-            placeholder="Detailed description..."
-          />
-          <Textinput
-            label="Category"
-            value={formData.category}
-            onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-            placeholder="e.g. Cleaning, Repair"
-          />
-          <Textinput
-            label="City"
-            value={formData.city}
-            onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-            placeholder="City"
-          />
-          <Select
-            label="Status"
-            options={["OPEN", "IN_PROGRESS", "COMPLETED", "CANCELLED"]}
-            value={formData.status}
-            onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-          />
-          <Select
-            label="Budget Type"
-            options={["fixed", "negotiable"]}
-            value={formData.budgetType}
-            onChange={(e) => setFormData({ ...formData, budgetType: e.target.value })}
-          />
-          <Textinput
-            label="User ID (Owner)"
-            value={formData.userId}
-            onChange={(e) => setFormData({ ...formData, userId: e.target.value })}
-            placeholder="cuid..."
-          />
-        </div>
-      </Modal>
     </div>
   );
 }

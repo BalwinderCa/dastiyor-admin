@@ -1,106 +1,166 @@
 "use client";
+
+import dynamic from "next/dynamic";
 import React, { useState, useEffect } from "react";
 import Card from "@/components/ui/Card";
-import GroupChart4 from "@/components/partials/widget/chart/group-chart-4";
-import DonutChart from "@/components/partials/widget/chart/donut-chart";
-import BasicArea from "@/components/partials/chart/appex-chart/BasicArea";
-import RecentTasks from "@/components/partials/widget/recent-tasks";
-import RecentUsers from "@/components/partials/widget/recent-users";
+import ImageBlock1 from "@/components/partials/widget/block/image-block-1";
+import GroupChart1 from "@/components/partials/widget/chart/group-chart-1";
+import RevenueBarChart from "@/components/partials/widget/chart/revenue-bar-chart";
+import RadialsChart from "@/components/partials/widget/chart/radials";
+import SelectMonth from "@/components/partials/SelectMonth";
+import CompanyTable from "@/components/partials/table/company-table";
+import RecentActivity from "@/components/partials/widget/recent-activity";
+import RadarChart from "@/components/partials/widget/chart/radar-chart";
 import HomeBredCurbs from "@/components/partials/HomeBredCurbs";
-import { useTranslation } from "@/context/LanguageContext";
+import Icon from "@/components/ui/Icon";
 
-const AdminDashboard = () => {
+const MostSales = dynamic(
+  () => import("@/components/partials/widget/most-sales"),
+  { ssr: false }
+);
+
+export default function AdminDashboard() {
+  const [filterMap, setFilterMap] = useState("usa");
   const [stats, setStats] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const { t } = useTranslation();
+  const [statsError, setStatsError] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
-    async function fetchStats() {
-      try {
-        const res = await fetch("/api/stats");
-        if (!res.ok) {
-          throw new Error(`Error ${res.status}: ${await res.text()}`);
-        }
-        const data = await res.json();
-        if (!cancelled) {
-          setStats(data);
-          setLoading(false);
-        }
-      } catch (e) {
-        if (!cancelled) {
-          setError(e.message);
-          setLoading(false);
-        }
-      }
-    }
-    fetchStats();
-    return () => {
-      cancelled = true;
-    };
+    fetch("/api/stats")
+      .then((r) => r.ok ? r.json() : Promise.reject(new Error(r.statusText)))
+      .then((data) => { if (!cancelled) setStats(data); })
+      .catch((e) => { if (!cancelled) setStatsError(e.message); });
+    return () => { cancelled = true; };
   }, []);
 
-  if (loading) {
-    return <div className="p-4 text-slate-500">Loading dashboard stats...</div>;
-  }
-
-  if (error) {
-    return <div className="p-4 text-danger-500">Error loading stats: {error}</div>;
-  }
-
-  if (!stats) return null;
-
   return (
-    <div className="space-y-5">
-      <HomeBredCurbs title={t("dashboard.overview")} />
-
-      <div className="grid grid-cols-12 gap-5">
-        <div className="col-span-12 space-y-5">
-          <Card>
-            <div className="grid grid-cols-12 gap-5">
-              <div className="xl:col-span-8 col-span-12">
-                <div className="grid md:grid-cols-4 sm:grid-cols-2 grid-cols-1 gap-3">
-                  <GroupChart4 stats={stats} />
-                </div>
+    <div>
+      <HomeBredCurbs title="Dashboard (Analytics)" />
+      {/* Live counts from shared website database */}
+      <Card title="Live from shared database" className="mb-5">
+        {statsError && (
+          <p className="text-danger text-sm mb-3">
+            Could not load stats. Set .env DATABASE_URL to the same DB as your website.
+          </p>
+        )}
+        {stats && (
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-4">
+              <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-sm mb-1">
+                <Icon icon="heroicons-outline:users" /> Users
               </div>
-
-              <div className="xl:col-span-4 col-span-12">
-                <div className="bg-slate-50 dark:bg-slate-900 rounded-md p-4">
-                  <span className="block dark:text-slate-400 text-sm text-slate-600">
-                    {t("dashboard.taskStatus")}
-                  </span>
-                  <DonutChart
-                    series={[stats.tasksCompleted || 0, stats.tasksOpen || 0]}
-                    labels={[t("dashboard.completed"), t("dashboard.open")]}
-                  />
-                </div>
+              <div className="text-xl font-semibold text-slate-900 dark:text-white">{stats.users}</div>
+            </div>
+            <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-4">
+              <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-sm mb-1">
+                <Icon icon="heroicons-outline:clipboard-document-list" /> Tasks
               </div>
+              <div className="text-xl font-semibold text-slate-900 dark:text-white">{stats.tasks}</div>
+              <div className="text-xs text-slate-500 mt-1">{stats.tasksOpen} open · {stats.tasksCompleted} done</div>
+            </div>
+            <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-4">
+              <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-sm mb-1">
+                <Icon icon="heroicons-outline:star" /> Reviews
+              </div>
+              <div className="text-xl font-semibold text-slate-900 dark:text-white">{stats.reviews}</div>
+            </div>
+            <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-4">
+              <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-sm mb-1">
+                <Icon icon="heroicons-outline:credit-card" /> Active subs
+              </div>
+              <div className="text-xl font-semibold text-slate-900 dark:text-white">{stats.subscriptionsActive}</div>
+            </div>
+          </div>
+        )}
+        {!stats && !statsError && <p className="text-slate-500 text-sm">Loading…</p>}
+      </Card>
+      <div className="grid grid-cols-12 gap-5 mb-5">
+        <div className="2xl:col-span-3 lg:col-span-4 col-span-12">
+          <ImageBlock1 />
+        </div>
+        <div className="2xl:col-span-9 lg:col-span-8 col-span-12">
+          <Card bodyClass="p-4">
+            <div className="grid md:grid-cols-3 col-span-1 gap-4">
+              <GroupChart1 />
             </div>
           </Card>
-
-          <Card title={t("dashboard.taskActivity")}>
-            <BasicArea
-              height={310}
-              series={[{ name: "Tasks Created", data: [12, 19, 15, 25, 32, 28, 40, 35, 50, 45, 60, 55] }]}
-            />
-          </Card>
         </div>
-
+      </div>
+      <div className="grid grid-cols-12 gap-5">
         <div className="lg:col-span-8 col-span-12">
-          <Card title={t("dashboard.recentTasks")} noborder>
-            <RecentTasks tasks={stats.recentTasks} />
+          <Card>
+            <div className="legend-ring">
+              <RevenueBarChart />
+            </div>
           </Card>
         </div>
-
         <div className="lg:col-span-4 col-span-12">
-          <Card title={t("dashboard.newestMembers")}>
-            <RecentUsers users={stats.recentUsers} />
+          <Card title="Overview" headerslot={<SelectMonth />}>
+            <RadialsChart />
+          </Card>
+        </div>
+        <div className="lg:col-span-8 col-span-12">
+          <Card title="All Company" headerslot={<SelectMonth />} noborder>
+            <CompanyTable />
+          </Card>
+        </div>
+        <div className="lg:col-span-4 col-span-12">
+          <Card title="Recent Activity" headerslot={<SelectMonth />}>
+            <RecentActivity />
+          </Card>
+        </div>
+        <div className="lg:col-span-8 col-span-12">
+          <Card
+            title="Most Sales"
+            headerslot={
+              <div className="border border-slate-200 dark:border-slate-700 dark:bg-slate-900 rounded p-1 flex items-center">
+                <span
+                  className={`flex-1 text-sm font-normal px-3 py-1 transition-all duration-150 rounded cursor-pointer ${
+                    filterMap === "global"
+                      ? "bg-slate-900 text-white dark:bg-slate-700 dark:text-slate-300"
+                      : "dark:text-slate-300"
+                  }`}
+                  onClick={() => setFilterMap("global")}
+                >
+                  Global
+                </span>
+                <span
+                  className={`flex-1 text-sm font-normal px-3 py-1 rounded transition-all duration-150 cursor-pointer ${
+                    filterMap === "usa"
+                      ? "bg-slate-900 text-white dark:bg-slate-700 dark:text-slate-300"
+                      : "dark:text-slate-300"
+                  }`}
+                  onClick={() => setFilterMap("usa")}
+                >
+                  USA
+                </span>
+              </div>
+            }
+          >
+            <MostSales filterMap={filterMap} />
+          </Card>
+        </div>
+        <div className="lg:col-span-4 col-span-12">
+          <Card title="Overview" headerslot={<SelectMonth />}>
+            <RadarChart />
+            <div className="bg-slate-50 dark:bg-slate-900 rounded p-4 mt-8 flex justify-between flex-wrap">
+              <div className="space-y-1">
+                <h4 className="text-slate-600 dark:text-slate-200 text-xs font-normal">Invested amount</h4>
+                <div className="text-sm font-medium text-slate-900 dark:text-white">$8264.35</div>
+                <div className="text-slate-500 dark:text-slate-300 text-xs font-normal">+0.001.23 (0.2%)</div>
+              </div>
+              <div className="space-y-1">
+                <h4 className="text-slate-600 dark:text-slate-200 text-xs font-normal">Invested amount</h4>
+                <div className="text-sm font-medium text-slate-900 dark:text-white">$8264.35</div>
+              </div>
+              <div className="space-y-1">
+                <h4 className="text-slate-600 dark:text-slate-200 text-xs font-normal">Invested amount</h4>
+                <div className="text-sm font-medium text-slate-900 dark:text-white">$8264.35</div>
+              </div>
+            </div>
           </Card>
         </div>
       </div>
     </div>
   );
-};
-
-export default AdminDashboard;
+}

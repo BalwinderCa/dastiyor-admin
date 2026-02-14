@@ -43,3 +43,52 @@ export async function GET(request) {
     );
   }
 }
+
+export async function POST(request) {
+  try {
+    const body = await request.json();
+    const { fullName, email, password, role, isVerified, phone } = body;
+
+    // Basic validation
+    if (!email || !password || !fullName) {
+      return NextResponse.json(
+        { error: "Missing required fields" },
+        { status: 400 }
+      );
+    }
+
+    // Check if user exists
+    const existingUser = await prisma.user.findUnique({ where: { email } });
+    if (existingUser) {
+      return NextResponse.json(
+        { error: "User already exists" },
+        { status: 409 }
+      );
+    }
+
+    const bcrypt = require("bcryptjs");
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const matchRole = ["CUSTOMER", "PROVIDER", "ADMIN"].includes(role) ? role : "CUSTOMER";
+
+    const newUser = await prisma.user.create({
+      data: {
+        fullName,
+        email,
+        password: hashedPassword,
+        role: matchRole,
+        isVerified: !!isVerified,
+        phone: phone || null,
+      },
+    });
+
+    const { password: _, ...userWithoutPassword } = newUser;
+
+    return NextResponse.json(userWithoutPassword, { status: 201 });
+  } catch (e) {
+    return NextResponse.json(
+      { error: e.message },
+      { status: 500 }
+    );
+  }
+}

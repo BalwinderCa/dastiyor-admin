@@ -2,13 +2,9 @@ import dynamic from "next/dynamic";
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 import useDarkMode from "@/hooks/useDarkMode";
 
-const BasicArea = ({ height = 350 }) => {
+const BasicArea = ({ height = 350, series = [{ data: [90, 70, 85, 60, 80, 70, 90, 75, 60, 80] }], categories = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] }) => {
   const [isDark] = useDarkMode();
-  const series = [
-    {
-      data: [90, 70, 85, 60, 80, 70, 90, 75, 60, 80],
-    },
-  ];
+  // Series is handled via props now
   const options = {
     chart: {
       toolbar: {

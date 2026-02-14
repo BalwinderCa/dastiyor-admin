@@ -6,6 +6,29 @@ export const menuItems = [
   { title: "Subscriptions & payments", translationKey: "menu.subscriptions", icon: "heroicons-outline:credit-card", link: "admin/subscriptions" },
   { title: "Reviews & complaints", translationKey: "menu.reviews", icon: "heroicons-outline:star", link: "admin/reviews" },
   { title: "Moderation tools", translationKey: "menu.moderation", icon: "heroicons-outline:shield-check", link: "admin/moderation" },
+  { title: "Calendar", translationKey: "menu.calendar", icon: "heroicons-outline:calendar", link: "admin/calendar" },
+  {
+    title: "Settings",
+    translationKey: "menu.settings",
+    icon: "heroicons-outline:cog",
+    child: [
+      {
+        childtitle: "Company Settings",
+        childlink: "settings/company",
+        translationKey: "settings.company.title",
+      },
+      {
+        childtitle: "Payment Settings",
+        childlink: "settings/payment",
+        translationKey: "settings.payment.title",
+      },
+      {
+        childtitle: "Profile Settings",
+        childlink: "settings/profile",
+        translationKey: "settings.profile.title",
+      },
+    ],
+  },
 ];
 
 export const topMenu = [

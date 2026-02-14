@@ -205,27 +205,27 @@ const shapeLine3 = {
   },
 };
 
-const statistics = [
-  {
-    name: shapeLine1,
-    title: "Totel revenue",
-    count: "3,564",
-    bg: "bg-[#E5F9FF] dark:bg-slate-900	",
-  },
-  {
-    name: shapeLine2,
-    title: "Products sold",
-    count: "564",
-    bg: "bg-[#FFEDE5] dark:bg-slate-900	",
-  },
-  {
-    name: shapeLine3,
-    title: "Growth",
-    count: "+5.0%",
-    bg: "bg-[#EAE5FF] dark:bg-slate-900	",
-  },
-];
-const GroupChart1 = () => {
+const GroupChart1 = ({ stats }) => {
+  const statistics = [
+    {
+      name: shapeLine1,
+      title: "Total Users",
+      count: stats?.users || "0",
+      bg: "bg-[#E5F9FF] dark:bg-slate-900	",
+    },
+    {
+      name: shapeLine2,
+      title: "Total Tasks",
+      count: stats?.tasks || "0",
+      bg: "bg-[#FFEDE5] dark:bg-slate-900	",
+    },
+    {
+      name: shapeLine3,
+      title: "Reviews",
+      count: stats?.reviews || "0",
+      bg: "bg-[#EAE5FF] dark:bg-slate-900	",
+    },
+  ];
   return (
     <>
       {statistics.map((item, i) => (

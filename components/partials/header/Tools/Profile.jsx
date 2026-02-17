@@ -9,6 +9,7 @@ import { useTranslation } from "@/context/LanguageContext";
 
 const ProfileLabel = () => {
   const { t } = useTranslation();
+  const user = useSelector((state) => state.auth?.user);
   return (
     <div className="flex items-center">
       <div className="flex-1 ltr:mr-[10px] rtl:ml-[10px]">
@@ -22,7 +23,7 @@ const ProfileLabel = () => {
       </div>
       <div className="flex-none text-slate-600 dark:text-white text-sm font-normal items-center lg:flex hidden overflow-hidden text-ellipsis whitespace-nowrap">
         <span className="overflow-hidden text-ellipsis whitespace-nowrap w-[85px] block">
-          {t("common.admin")}
+          {user?.fullName || t("common.admin")}
         </span>
         <span className="text-base inline-block ltr:ml-[10px] rtl:mr-[10px]">
           <Icon icon="heroicons-outline:chevron-down"></Icon>
@@ -56,9 +57,10 @@ const Profile = () => {
     {
       label: t("common.logout"),
       icon: "heroicons-outline:login",
-      action: () => {
-        dispatch(handleLogout(false));
-        router.push("/login"); // Fixed redirection to login page
+      action: async () => {
+        await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+        dispatch(handleLogout());
+        router.push("/login");
       },
     },
   ];

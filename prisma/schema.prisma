@@ -164,3 +164,13 @@ model TaskFavorite {
 
   @@unique([userId, taskId])
 }
+
+model Category {
+  id             String   @id @default(cuid())
+  name           String
+  slug           String   @unique
+  order          Int      @default(0)
+  subcategories  String?   // JSON array of subcategory names
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}

@@ -17,7 +17,8 @@ import MobileMenu from "@/components/partials/sidebar/MobileMenu";
 import useMobileMenu from "@/hooks/useMobileMenu";
 import useMonoChrome from "@/hooks/useMonoChrome";
 import MobileFooter from "@/components/partials/footer/MobileFooter";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
+import { setAuth } from "@/components/partials/auth/store";
 import useRtl from "@/hooks/useRtl";
 import useDarkMode from "@/hooks/useDarkMode";
 import useSkin from "@/hooks/useSkin";
@@ -35,14 +36,37 @@ export default function RootLayout({ children }) {
   const [navbarType] = useNavbarType();
   const [isMonoChrome] = useMonoChrome();
   const router = useRouter();
-  const isAuth = useSelector((state) => state.auth?.isAuth);
+  const dispatch = useDispatch();
+  const { isAuth } = useSelector((state) => state.auth) || {};
   const location = usePathname();
+  const [authChecked, setAuthChecked] = useState(false);
 
+  // Verify session with backend on mount (cookie sent automatically)
   useEffect(() => {
-    if (typeof window !== "undefined" && isAuth === false) {
-      router.replace("/login");
+    let cancelled = false;
+    async function verify() {
+      try {
+        const res = await fetch("/api/auth/me", { credentials: "include" });
+        const data = await res.json();
+        if (cancelled) return;
+        setAuthChecked(true);
+        if (res.ok && data.user) {
+          dispatch(setAuth({ user: data.user, isAuth: true }));
+        } else {
+          dispatch(setAuth({ user: null, isAuth: false }));
+          router.replace("/login");
+        }
+      } catch {
+        if (!cancelled) {
+          setAuthChecked(true);
+          dispatch(setAuth({ user: null, isAuth: false }));
+          router.replace("/login");
+        }
+      }
     }
-  }, [isAuth, router]);
+    verify();
+    return () => { cancelled = true; };
+  }, [dispatch, router]);
   // header switch class
   const switchHeaderClass = () => {
     if (menuType === "horizontal" || menuHidden) {
@@ -60,6 +84,18 @@ export default function RootLayout({ children }) {
   const [menuHidden] = useMenuHidden();
   // mobile menu
   const [mobileMenu, setMobileMenu] = useMobileMenu();
+
+  if (!authChecked) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-white dark:bg-slate-800">
+        <Loading />
+      </div>
+    );
+  }
+
+  if (!isAuth) {
+    return null; // redirecting to login
+  }
 
   return (
     <div

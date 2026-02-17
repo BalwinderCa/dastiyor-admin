@@ -1,128 +1,162 @@
 "use client";
 
-import React, { useState } from "react";
-import FullCalendar from "@fullcalendar/react"; // must go before plugins
-import { useSelector, useDispatch } from "react-redux";
+import React, { useState, useEffect, useMemo } from "react";
+import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import listPlugin from "@fullcalendar/list";
-
-// needed for dayClick
 import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
 import Checkbox from "@/components/ui/Checkbox";
-import EventModal from "@/components/partials/app/calendar/EventModal";
-import EditEventModal from "@/components/partials/app/calendar/EditEventModal";
+import HomeBredCurbs from "@/components/partials/HomeBredCurbs";
+import Link from "next/link";
 
-const CalenderPage = () => {
-  const { calendarEvents, categories } = useSelector((state) => state.calendar);
+const TASK_STATUS_COLORS = {
+  OPEN: "primary",
+  IN_PROGRESS: "warning",
+  COMPLETED: "success",
+  CANCELLED: "danger",
+};
+
+export default function AdminCalendarPage() {
+  const [tasks, setTasks] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [activeModal, setActiveModal] = useState(false);
-  const [selectedEvent, setSelectedEvent] = useState(null);
-  const [editItem, setEditItem] = useState(null);
-  const [editModal, setEditModal] = useState(false);
-
-  const [selectedCategories, setSelectedCategories] = useState(
-    categories.map((c) => c.value)
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [selectedStatuses, setSelectedStatuses] = useState(
+    Object.keys(TASK_STATUS_COLORS)
   );
 
-  const handleCategorySelection = (category) => {
-    if (selectedCategories.includes(category)) {
-      setSelectedCategories(selectedCategories.filter((c) => c !== category));
-    } else {
-      setSelectedCategories([...selectedCategories, category]);
+  const categories = useMemo(
+    () =>
+      Object.entries(TASK_STATUS_COLORS).map(([value, color]) => ({
+        label: value.replace("_", " "),
+        value,
+        activeClass: `ring-${color}-500 bg-${color}-500`,
+      })),
+    []
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchTasks() {
+      try {
+        const res = await fetch("/api/tasks?limit=500", { credentials: "include" });
+        if (!res.ok) throw new Error(await res.text());
+        const json = await res.json();
+        if (!cancelled) setTasks(json.data || []);
+      } catch (e) {
+        if (!cancelled) setError(e.message);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     }
-  };
+    fetchTasks();
+    return () => { cancelled = true; };
+  }, []);
 
-  const dispatch = useDispatch();
-  const closeModal = () => {
-    setActiveModal(false);
-  };
+  const calendarEvents = useMemo(() => {
+    return tasks
+      .filter((t) => t.dueDate || t.createdAt)
+      .map((task) => {
+        const date = task.dueDate ? new Date(task.dueDate) : new Date(task.createdAt);
+        return {
+          id: task.id,
+          title: task.title,
+          start: date,
+          allDay: true,
+          extendedProps: {
+            type: "task",
+            status: task.status,
+            taskId: task.id,
+            category: task.status,
+          },
+        };
+      });
+  }, [tasks]);
 
-  const onCloseEditModal = () => {
-    setEditModal(false);
-  };
-
-  //   const calendarOptions = {
-  //     plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin],
-  //     headerToolbar: {
-  //       left: "prev,next today",
-  //       center: "title",
-  //       right: "dayGridMonth,timeGridWeek,timeGridDay,listWeek",
-  //     },
-  //     events: calendarEvents,
-  //     editable: true,
-  //     selectable: true,
-  //     selectMirror: true,
-  //     dayMaxEvents: true,
-  //     weekends: true,
-  //     dateClick: {},
-  //     eventClick: {},
-  //     eventsSet: {},
-  //   };
+  const filteredEvents = useMemo(
+    () =>
+      calendarEvents.filter((ev) =>
+        selectedStatuses.includes(ev.extendedProps?.status)
+      ),
+    [calendarEvents, selectedStatuses]
+  );
 
   const handleDateClick = (arg) => {
+    setSelectedDate(arg.dateStr);
     setActiveModal(true);
-    setSelectedEvent(arg);
   };
 
   const handleEventClick = (arg) => {
-    setEditModal(true);
-    setEditItem(arg);
+    const taskId = arg.event.extendedProps?.taskId;
+    if (taskId) window.location.href = "/admin/tasks"; // could link to task detail if you add it
   };
 
   const handleClassName = (arg) => {
-    if (arg.event.extendedProps.calendar === "holiday") {
-      return "danger";
-    } else if (arg.event.extendedProps.calendar === "business") {
-      return "primary";
-    } else if (arg.event.extendedProps.calendar === "personal") {
-      return "success";
-    } else if (arg.event.extendedProps.calendar === "family") {
-      return "info";
-    } else if (arg.event.extendedProps.calendar === "etc") {
-      return "info";
-    } else if (arg.event.extendedProps.calendar === "meeting") {
-      return "warning";
+    const status = arg.event.extendedProps?.status;
+    const color = TASK_STATUS_COLORS[status] || "primary";
+    return color;
+  };
+
+  const toggleStatus = (status) => {
+    if (selectedStatuses.includes(status)) {
+      setSelectedStatuses(selectedStatuses.filter((s) => s !== status));
+    } else {
+      setSelectedStatuses([...selectedStatuses, status]);
     }
   };
 
-  // filter events
-  const filteredEvents = calendarEvents.filter((event) =>
-    selectedCategories.includes(event.extendedProps.calendar)
-  );
+  const toggleAll = () => {
+    if (selectedStatuses.length === categories.length) {
+      setSelectedStatuses([]);
+    } else {
+      setSelectedStatuses(categories.map((c) => c.value));
+    }
+  };
+
+  if (loading) {
+    return (
+      <div>
+        <HomeBredCurbs title="Calendar" />
+        <div className="p-8 text-center text-slate-500">Loading tasks...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div>
+        <HomeBredCurbs title="Calendar" />
+        <p className="text-danger flex items-center gap-2">{error}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="dastiyor-calender">
-      <h4 className="font-medium lg:text-2xl text-xl capitalize text-slate-900 inline-block ltr:pr-4 rtl:pl-4 mb-6">
-        Calendar
-      </h4>
+      <HomeBredCurbs title="Calendar" />
       <div className="grid grid-cols-12 gap-4">
         <Card className="lg:col-span-3 col-span-12 bg-white">
-          <Button
-            icon="heroicons-outline:plus"
-            text=" Add Event"
-            className="btn-dark w-full block  "
-            onClick={() => {
-              setActiveModal(true);
-            }}
-          />
+          <Link href="/admin/tasks">
+            <Button
+              icon="heroicons-outline:clipboard-document-list"
+              text="View all tasks"
+              className="btn-dark w-full block"
+            />
+          </Link>
           <div className="block py-4 text-slate-800 dark:text-slate-400 font-semibold text-xs uppercase mt-4">
-            FILTER
+            Filter by status
           </div>
-          <ul className=" space-y-2 ">
+          <ul className="space-y-2">
             <li>
               <Checkbox
                 activeClass="ring-primary-500 bg-primary-500"
                 label="All"
-                value={selectedCategories.length === categories.length}
-                onChange={() => {
-                  if (selectedCategories.length === categories.length) {
-                    setSelectedCategories([]);
-                  } else {
-                    setSelectedCategories(categories.map((c) => c.value));
-                  }
-                }}
+                value={selectedStatuses.length === categories.length}
+                onChange={toggleAll}
               />
             </li>
             {categories.map((category) => (
@@ -130,12 +164,15 @@ const CalenderPage = () => {
                 <Checkbox
                   activeClass={category.activeClass}
                   label={category.label}
-                  value={selectedCategories.includes(category.value)}
-                  onChange={() => handleCategorySelection(category.value)}
+                  value={selectedStatuses.includes(category.value)}
+                  onChange={() => toggleStatus(category.value)}
                 />
               </li>
             ))}
           </ul>
+          <p className="text-slate-500 text-xs mt-4">
+            Tasks shown by due date (or creation date if no due date).
+          </p>
         </Card>
         <Card className="lg:col-span-9 col-span-12 bg-white">
           <FullCalendar
@@ -151,10 +188,9 @@ const CalenderPage = () => {
               right: "dayGridMonth,timeGridWeek,timeGridDay,listWeek",
             }}
             events={filteredEvents}
-            editable={true}
+            editable={false}
             selectable={true}
-            selectMirror={true}
-            dayMaxEvents={2}
+            dayMaxEvents={3}
             weekends={true}
             dateClick={handleDateClick}
             eventClick={handleEventClick}
@@ -164,18 +200,29 @@ const CalenderPage = () => {
         </Card>
       </div>
 
-      <EventModal
-        activeModal={activeModal}
-        onClose={closeModal}
-        selectedEvent={selectedEvent}
-      />
-      <EditEventModal
-        editModal={editModal}
-        onCloseEditModal={onCloseEditModal}
-        editItem={editItem}
-      />
+      {activeModal && selectedDate && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+          onClick={() => setActiveModal(false)}
+        >
+          <div
+            className="bg-white dark:bg-slate-800 rounded-lg p-6 shadow-xl max-w-sm w-full mx-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h5 className="font-medium text-slate-900 dark:text-white mb-2">
+              Date: {new Date(selectedDate).toLocaleDateString(undefined, { dateStyle: "long" })}
+            </h5>
+            <p className="text-sm text-slate-500 mb-4">
+              Create tasks from the Tasks page; they will appear here by due date.
+            </p>
+            <Button
+              text="Close"
+              className="btn-dark w-full"
+              onClick={() => setActiveModal(false)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
-};
-
-export default CalenderPage;
+}

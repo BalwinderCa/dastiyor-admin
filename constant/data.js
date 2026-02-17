@@ -2,9 +2,11 @@ export const menuItems = [
   { title: "Dashboard (analytics)", translationKey: "menu.dashboard", icon: "heroicons-outline:chart-bar", link: "admin/dashboard" },
   { title: "Users management", translationKey: "menu.users", icon: "heroicons-outline:users", link: "admin/users" },
   { title: "Tasks management", translationKey: "menu.tasks", icon: "heroicons-outline:clipboard-document-list", link: "admin/tasks" },
+  { title: "Responses", translationKey: "menu.responses", icon: "heroicons-outline:chat-bubble-left-right", link: "admin/responses" },
   { title: "Categories", translationKey: "menu.categories", icon: "heroicons-outline:folder", link: "admin/categories" },
   { title: "Subscriptions & payments", translationKey: "menu.subscriptions", icon: "heroicons-outline:credit-card", link: "admin/subscriptions" },
   { title: "Reviews & complaints", translationKey: "menu.reviews", icon: "heroicons-outline:star", link: "admin/reviews" },
+  { title: "Notifications", translationKey: "menu.notifications", icon: "heroicons-outline:bell-alert", link: "admin/notifications" },
   { title: "Moderation tools", translationKey: "menu.moderation", icon: "heroicons-outline:shield-check", link: "admin/moderation" },
   { title: "Calendar", translationKey: "menu.calendar", icon: "heroicons-outline:calendar", link: "admin/calendar" },
   {

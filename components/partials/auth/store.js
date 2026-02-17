@@ -1,113 +1,60 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { v4 as uuidv4 } from "uuid";
 import { toast } from "react-toastify";
 
-const initialUsers = () => {
+const initialUser = () => {
   if (typeof window !== "undefined") {
-    const item = window?.localStorage.getItem("users");
-    return item
-      ? JSON.parse(item)
-      : [
-          {
-            id: uuidv4(),
-            name: "Dastiyor Admin",
-            email: "admin@dastiyor.com",
-            password: "dastiyor",
-          },
-        ];
+    try {
+      const item = window?.localStorage.getItem("adminUser");
+      return item ? JSON.parse(item) : null;
+    } catch {
+      return null;
+    }
   }
-  return [
-    {
-      id: uuidv4(),
-      name: "Dastiyor Admin",
-      email: "admin@dastiyor.com",
-      password: "dastiyor",
-    },
-  ];
-};
-// save users in local storage
-
-const initialIsAuth = () => {
-  if (typeof window !== "undefined") {
-    const item = window?.localStorage.getItem("isAuth");
-    return item ? JSON.parse(item) : false;
-  }
-  return false;
+  return null;
 };
 
 export const authSlice = createSlice({
   name: "auth",
   initialState: {
-    users: initialUsers(),
-    isAuth: initialIsAuth(),
+    user: initialUser(),
+    isAuth: false, // verified by /api/auth/me on load
   },
   reducers: {
-    handleRegister: (state, action) => {
-      const { name, email, password } = action.payload;
-      const user = state.users.find((user) => user.email === email);
-      if (user) {
-        toast.error("User already exists", {
-          position: "top-right",
-          autoClose: 1500,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-          progress: undefined,
-          theme: "light",
-        });
-      } else {
-        state.users.push({
-          id: uuidv4(),
-          name,
-          email,
-          password,
-        });
-        if (typeof window !== "undefined") {
-          window?.localStorage.setItem("users", JSON.stringify(state.users));
-        }
-        toast.success("User registered successfully", {
-          position: "top-right",
-          autoClose: 1500,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-          progress: undefined,
-          theme: "light",
-        });
+    setAuth: (state, action) => {
+      const { user, isAuth } = action.payload;
+      state.user = user ?? state.user;
+      state.isAuth = isAuth !== undefined ? isAuth : state.isAuth;
+      if (typeof window !== "undefined" && user !== undefined) {
+        if (user) window?.localStorage.setItem("adminUser", JSON.stringify(user));
+        else window?.localStorage.removeItem("adminUser");
       }
     },
-
     handleLogin: (state, action) => {
-      state.isAuth = action.payload;
-      // save isAuth in local storage
-      if (typeof window !== "undefined") {
-        window?.localStorage.setItem("isAuth", JSON.stringify(state.isAuth));
+      const { user } = action.payload || {};
+      state.user = user || state.user;
+      state.isAuth = true;
+      if (typeof window !== "undefined" && user) {
+        window?.localStorage.setItem("adminUser", JSON.stringify(user));
       }
-      toast.success("User logged in successfully", {
+      toast.success("Logged in successfully", {
         position: "top-right",
         autoClose: 1500,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-        theme: "light",
       });
     },
-    handleLogout: (state, action) => {
-      state.isAuth = action.payload;
-      // remove isAuth from local storage
+    handleLogout: (state) => {
+      state.user = null;
+      state.isAuth = false;
       if (typeof window !== "undefined") {
-        window?.localStorage.removeItem("isAuth");
+        window?.localStorage.removeItem("adminUser");
       }
-      toast.success("User logged out successfully", {
-        position: "top-right",
-      });
+      toast.success("Logged out successfully", { position: "top-right" });
+    },
+    handleRegister: () => {
+      // Admin panel: registration is disabled; admins are created in DB/seed
+      toast.info("Contact administrator for access.", { position: "top-right" });
     },
   },
 });
 
-export const { handleRegister, handleLogin, handleLogout } = authSlice.actions;
+export const { setAuth, handleLogin, handleLogout, handleRegister } = authSlice.actions;
 export default authSlice.reducer;

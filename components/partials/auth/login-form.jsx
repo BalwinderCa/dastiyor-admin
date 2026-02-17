@@ -20,7 +20,6 @@ const LoginForm = () => {
     })
     .required();
   const dispatch = useDispatch();
-  const { users } = useSelector((state) => state.auth);
   const {
     register,
     formState: { errors },
@@ -31,26 +30,33 @@ const LoginForm = () => {
     mode: "all",
   });
   const router = useRouter();
-  const onSubmit = (data) => {
-    const user = users.find(
-      (user) => user.email === data.email && user.password === data.password
-    );
-    if (user) {
-      dispatch(handleLogin(true));
-      setTimeout(() => {
-        router.push("/admin/dashboard");
-      }, 1500);
-    } else {
-      toast.error(t("login.invalidCredentials"), {
-        position: "top-right",
-        autoClose: 1500,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-        theme: "light",
+  const [submitting, setSubmitting] = useState(false);
+
+  const onSubmit = async (data) => {
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: data.email, password: data.password }),
       });
+      const json = await res.json();
+      if (!res.ok) {
+        toast.error(json.error || t("login.invalidCredentials"), {
+          position: "top-right",
+          autoClose: 2000,
+        });
+        return;
+      }
+      dispatch(handleLogin({ user: json.user }));
+      router.push("/admin/dashboard");
+    } catch (e) {
+      toast.error(e.message || t("login.invalidCredentials"), {
+        position: "top-right",
+        autoClose: 2000,
+      });
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -61,8 +67,8 @@ const LoginForm = () => {
       <Textinput
         name="email"
         label={t("login.email")}
-        defaultValue="admin@dastiyor.com"
         type="email"
+        placeholder="admin@dastiyor.com"
         register={register}
         error={errors?.email}
       />
@@ -70,7 +76,6 @@ const LoginForm = () => {
         name="password"
         label={t("login.password")}
         type="password"
-        defaultValue="dastiyor"
         register={register}
         error={errors.password}
       />
@@ -88,7 +93,9 @@ const LoginForm = () => {
         </Link>
       </div>
 
-      <button className="btn btn-dark block w-full text-center">{t("login.signIn")}</button>
+      <button type="submit" className="btn btn-dark block w-full text-center" disabled={submitting}>
+        {submitting ? "..." : t("login.signIn")}
+      </button>
     </form>
   );
 };

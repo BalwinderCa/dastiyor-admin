@@ -36,3 +36,17 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+
+### Admin login on production (Vercel)
+
+The app needs an admin user in the database. If you get "Invalid email or password" on [https://dastiyor-admin.vercel.app/login](https://dastiyor-admin.vercel.app/login):
+
+1. In Vercel: Project → Settings → Environment Variables. Copy your **production** `DATABASE_URL`.
+2. Ensure the production DB schema is applied (Vercel runs `prisma generate` on build; run migrations or `prisma db push` once against production if needed).
+3. From your machine, create the admin user against the production DB:
+
+```bash
+DATABASE_URL="postgresql://user:pass@host:5432/dbname" node scripts/create-admin.js
+```
+
+4. Log in with **admin@dastiyor.com** / **admin123**.

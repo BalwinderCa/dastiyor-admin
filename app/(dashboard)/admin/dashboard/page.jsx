@@ -82,7 +82,13 @@ const AdminDashboard = () => {
           <Card title={t("dashboard.taskActivity")}>
             <BasicArea
               height={310}
-              series={[{ name: "Tasks Created", data: [12, 19, 15, 25, 32, 28, 40, 35, 50, 45, 60, 55] }]}
+              series={[
+                {
+                  name: "Tasks Created",
+                  data: stats.taskActivity?.data || [],
+                },
+              ]}
+              categories={stats.taskActivity?.labels || []}
             />
           </Card>
         </div>

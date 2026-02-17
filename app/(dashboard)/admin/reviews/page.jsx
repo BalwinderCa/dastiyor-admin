@@ -16,11 +16,15 @@ export default function AdminReviews() {
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showHidden, setShowHidden] = useState(true);
+
   const fetchReviews = async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/reviews?limit=500", { credentials: "include" });
+      const res = await fetch("/api/reviews?limit=500&includeHidden=true", {
+        credentials: "include",
+      });
       if (!res.ok) throw new Error(await res.text());
       const json = await res.json();
       setReviews(json.data || []);
@@ -34,6 +38,24 @@ export default function AdminReviews() {
   useEffect(() => {
     fetchReviews();
   }, []);
+
+  const toggleHidden = async (review) => {
+    try {
+      const res = await fetch(`/api/reviews/${review.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ hidden: !review.hidden }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || res.statusText);
+      setReviews((prev) =>
+        prev.map((r) => (r.id === review.id ? { ...r, hidden: data.hidden } : r))
+      );
+    } catch (e) {
+      alert(e.message);
+    }
+  };
 
   const COLUMNS = [
     {
@@ -102,10 +124,42 @@ export default function AdminReviews() {
         </span>
       ),
     },
+    {
+      Header: "Visible",
+      accessor: "hidden",
+      Cell: (row) =>
+        row?.cell?.value ? (
+          <span className="text-xs text-slate-400">Hidden</span>
+        ) : (
+          <span className="text-xs text-success-500">Visible</span>
+        ),
+    },
+    {
+      Header: "Actions",
+      accessor: "id",
+      Cell: (row) => {
+        const review = row?.row?.original;
+        const isHidden = review?.hidden;
+        return (
+          <button
+            type="button"
+            className={`btn btn-xs ${
+              isHidden ? "btn-success" : "btn-outline-dark"
+            }`}
+            onClick={() => toggleHidden(review)}
+          >
+            {isHidden ? "Unhide" : "Hide"}
+          </button>
+        );
+      },
+    },
   ];
 
   const columns = useMemo(() => COLUMNS, []);
-  const data = useMemo(() => reviews, [reviews]);
+  const data = useMemo(
+    () => (showHidden ? reviews : reviews.filter((r) => !r.hidden)),
+    [reviews, showHidden]
+  );
 
   const tableInstance = useTable(
     {
@@ -143,7 +197,18 @@ export default function AdminReviews() {
       <HomeBredCurbs title="Reviews & complaints" />
       <Card title="Reviews" noborder>
         <div className="md:flex justify-between items-center mb-6">
-          <GlobalFilter filter={globalFilter} setFilter={setGlobalFilter} />
+          <div className="flex items-center gap-3">
+            <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+              <input
+                type="checkbox"
+                className="rounded border-slate-300"
+                checked={showHidden}
+                onChange={(e) => setShowHidden(e.target.checked)}
+              />
+              Show hidden
+            </label>
+            <GlobalFilter filter={globalFilter} setFilter={setGlobalFilter} />
+          </div>
         </div>
         {error && (
           <p className="text-danger text-sm mb-4 flex items-center gap-2">

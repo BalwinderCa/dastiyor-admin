@@ -3,31 +3,54 @@
 import React, { useEffect, useState } from "react";
 import Card from "@/components/ui/Card";
 import Icon from "@/components/ui/Icon";
+import Button from "@/components/ui/Button";
 import HomeBredCurbs from "@/components/partials/HomeBredCurbs";
 import Link from "next/link";
+import { toast } from "react-toastify";
 
 export default function AdminModeration() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [updatingId, setUpdatingId] = useState(null);
+
+  const fetchModeration = async () => {
+    try {
+      const res = await fetch("/api/moderation", { credentials: "include" });
+      if (!res.ok) throw new Error(await res.text());
+      const json = await res.json();
+      setData(json);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
-    async function fetchModeration() {
-      try {
-        const res = await fetch("/api/moderation", { credentials: "include" });
-        if (!res.ok) throw new Error(await res.text());
-        const json = await res.json();
-        if (!cancelled) setData(json);
-      } catch (e) {
-        if (!cancelled) setError(e.message);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-    fetchModeration();
+    fetchModeration().then(() => { if (cancelled) return; });
     return () => { cancelled = true; };
   }, []);
+
+  const setReportStatus = async (reportId, status) => {
+    setUpdatingId(reportId);
+    try {
+      const res = await fetch(`/api/reports/${reportId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ status }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      toast.success(status === "RESOLVED" ? "Report resolved" : "Report dismissed");
+      await fetchModeration();
+    } catch (e) {
+      toast.error(e.message);
+    } finally {
+      setUpdatingId(null);
+    }
+  };
 
   if (loading) {
     return (
@@ -50,7 +73,7 @@ export default function AdminModeration() {
     );
   }
 
-  const { openTasksCount = 0, unverifiedProviders = [], recentOpenTasks = [] } = data || {};
+  const { openTasksCount = 0, unverifiedProviders = [], recentOpenTasks = [], openReportsCount = 0, recentReports = [] } = data || {};
 
   return (
     <div>
@@ -59,7 +82,7 @@ export default function AdminModeration() {
         <p className="text-slate-500 dark:text-slate-400 text-sm mb-6">
           Queue for tasks and profiles that may need review. Open tasks and unverified providers below.
         </p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Link
             href="/admin/tasks?status=OPEN"
             className="p-5 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-primary-500 transition-colors"
@@ -85,9 +108,20 @@ export default function AdminModeration() {
               <span className="text-2xl font-bold text-warning-500">{unverifiedProviders.length}</span>
             </div>
           </div>
+          <div className="p-5 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+            <div className="flex items-center justify-between">
+              <div>
+                <h5 className="font-medium text-slate-900 dark:text-white mb-1">Reports</h5>
+                <p className="text-slate-500 dark:text-slate-400 text-sm">
+                  User-reported content
+                </p>
+              </div>
+              <span className="text-2xl font-bold text-danger-500">{openReportsCount}</span>
+            </div>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           <Card title="Recent open tasks" noborder>
             <div className="overflow-x-auto">
               {recentOpenTasks.length === 0 ? (
@@ -153,9 +187,51 @@ export default function AdminModeration() {
             </Link>
           </Card>
         </div>
+
+        <Card title="Reports (complaints)" noborder className="mt-6">
+          <p className="text-slate-500 dark:text-slate-400 text-sm mb-4">
+            User-reported content. Resolve or dismiss each report.
+          </p>
+          {recentReports.length === 0 ? (
+            <p className="text-slate-500 text-sm py-4">No open reports.</p>
+          ) : (
+            <ul className="divide-y divide-slate-100 dark:divide-slate-700">
+              {recentReports.map((r) => (
+                <li key={r.id} className="py-4 first:pt-0">
+                  <div className="flex flex-col gap-1">
+                    <p className="text-sm text-slate-900 dark:text-white font-medium">{r.reason}</p>
+                    <p className="text-xs text-slate-500">
+                      Reported by {r.reporter?.fullName} ({r.reporter?.email})
+                      {r.targetUser && ` · Against user: ${r.targetUser.fullName}`}
+                      {r.targetTask && ` · Against task: ${r.targetTask.title}`}
+                    </p>
+                    <p className="text-xs text-slate-400">
+                      {r.createdAt ? new Date(r.createdAt).toLocaleString(undefined, { dateStyle: "short", timeStyle: "short" }) : ""}
+                    </p>
+                  </div>
+                  <div className="flex gap-2 mt-2">
+                    <Button
+                      text="Resolve"
+                      className="btn-success btn-xs"
+                      onClick={() => setReportStatus(r.id, "RESOLVED")}
+                      disabled={updatingId === r.id}
+                    />
+                    <Button
+                      text="Dismiss"
+                      className="btn-outline-dark btn-xs"
+                      onClick={() => setReportStatus(r.id, "DISMISSED")}
+                      disabled={updatingId === r.id}
+                    />
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+
         <p className="text-slate-500 dark:text-slate-400 text-sm mt-6 flex items-center gap-2">
           <Icon icon="heroicons-outline:information-circle" className="text-lg" />
-          Approve or reject from Users and Tasks pages. Add a Report model later for user-reported content.
+          Approve or reject from Users and Tasks pages. Resolve reports above.
         </p>
       </Card>
     </div>

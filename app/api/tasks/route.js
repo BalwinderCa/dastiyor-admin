@@ -43,7 +43,20 @@ export async function GET(request) {
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { title, description, category, budgetType, city, userId, status } = body;
+    const {
+      title,
+      description,
+      category,
+      subcategory,
+      budgetType,
+      budgetAmount,
+      city,
+      address,
+      urgency,
+      dueDate,
+      userId,
+      status,
+    } = body;
 
     // Basic validation
     if (!title || !description || !category || !city || !userId) {
@@ -58,8 +71,13 @@ export async function POST(request) {
         title,
         description,
         category,
+        subcategory: subcategory || null,
         budgetType: budgetType || "negotiable",
+        budgetAmount: budgetAmount || null,
         city,
+        address: address || null,
+        urgency: urgency || "normal",
+        dueDate: dueDate ? new Date(dueDate) : null,
         userId,
         status: status || "OPEN",
       },

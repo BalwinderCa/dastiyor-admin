@@ -26,6 +26,8 @@ export default function AdminSubscriptions() {
   const [selectedSub, setSelectedSub] = useState(null);
   const [extendDays, setExtendDays] = useState(30);
   const [busy, setBusy] = useState(false);
+  const [payments, setPayments] = useState([]);
+  const [paymentsLoading, setPaymentsLoading] = useState(true);
 
   const fetchSubscriptions = async () => {
     setLoading(true);
@@ -46,6 +48,26 @@ export default function AdminSubscriptions() {
   useEffect(() => {
     fetchSubscriptions();
   }, [filterActive]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchPayments() {
+      setPaymentsLoading(true);
+      try {
+        const res = await fetch("/api/payments?limit=100", { credentials: "include" });
+        if (res.ok) {
+          const json = await res.json();
+          if (!cancelled) setPayments(json.data || []);
+        }
+      } catch {
+        if (!cancelled) setPayments([]);
+      } finally {
+        if (!cancelled) setPaymentsLoading(false);
+      }
+    }
+    fetchPayments();
+    return () => { cancelled = true; };
+  }, []);
 
   const handleExtend = (sub) => {
     setSelectedSub(sub);
@@ -375,10 +397,51 @@ export default function AdminSubscriptions() {
       </Card>
 
       <Card title="Payments" className="mt-5">
-        <p className="text-slate-500 dark:text-slate-400 text-sm flex items-center gap-2">
+        <p className="text-slate-500 dark:text-slate-400 text-sm mb-4 flex items-center gap-2">
           <Icon icon="heroicons-outline:information-circle" className="text-lg" />
-          Payment history, manual activation of subscriptions, refunds. Connect payment provider (e.g. Stripe).
+          Payment history. Connect payment provider (e.g. Stripe) in Settings → Payment.
         </p>
+        {paymentsLoading ? (
+          <div className="p-4 text-center text-slate-500">Loading payments...</div>
+        ) : payments.length === 0 ? (
+          <p className="text-slate-500 text-sm py-4">No payments yet.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-700">
+              <thead className="bg-slate-200 dark:bg-slate-700">
+                <tr>
+                  <th className="table-th text-left">User</th>
+                  <th className="table-th text-left">Amount</th>
+                  <th className="table-th text-left">Currency</th>
+                  <th className="table-th text-left">Method</th>
+                  <th className="table-th text-left">Status</th>
+                  <th className="table-th text-left">Date</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white dark:bg-slate-800 divide-y divide-slate-100 dark:divide-slate-700">
+                {payments.map((p) => (
+                  <tr key={p.id}>
+                    <td className="table-td">
+                      <div className="flex flex-col">
+                        <span className="text-sm font-medium text-slate-900 dark:text-white">{p.user?.fullName ?? "—"}</span>
+                        <span className="text-xs text-slate-500">{p.user?.email}</span>
+                      </div>
+                    </td>
+                    <td className="table-td text-sm text-slate-600 dark:text-slate-300">{p.amount}</td>
+                    <td className="table-td text-sm text-slate-600 dark:text-slate-300">{p.currency}</td>
+                    <td className="table-td text-sm text-slate-600 dark:text-slate-300 capitalize">{p.method}</td>
+                    <td className="table-td">
+                      <span className={`text-sm ${p.status === "SUCCEEDED" ? "text-success-500" : p.status === "FAILED" ? "text-danger-500" : "text-slate-500"}`}>{p.status}</span>
+                    </td>
+                    <td className="table-td text-sm text-slate-500">
+                      {p.createdAt ? new Date(p.createdAt).toLocaleString(undefined, { dateStyle: "short", timeStyle: "short" }) : "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </Card>
 
       <Modal

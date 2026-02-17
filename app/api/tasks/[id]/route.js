@@ -23,18 +23,34 @@ export async function PUT(request, { params }) {
     try {
         const body = await request.json();
         // Allow updating all fields
-        const { title, description, category, budgetType, city, status, userId } = body;
-
-        const data = {
+        const {
             title,
             description,
             category,
+            subcategory,
             budgetType,
+            budgetAmount,
             city,
+            address,
+            urgency,
+            dueDate,
             status,
-        };
+            userId,
+        } = body;
 
-        if (userId) data.userId = userId;
+        const data = {};
+        if (title !== undefined) data.title = title;
+        if (description !== undefined) data.description = description;
+        if (category !== undefined) data.category = category;
+        if (subcategory !== undefined) data.subcategory = subcategory || null;
+        if (budgetType !== undefined) data.budgetType = budgetType;
+        if (budgetAmount !== undefined) data.budgetAmount = budgetAmount || null;
+        if (city !== undefined) data.city = city;
+        if (address !== undefined) data.address = address || null;
+        if (urgency !== undefined) data.urgency = urgency;
+        if (dueDate !== undefined) data.dueDate = dueDate ? new Date(dueDate) : null;
+        if (status !== undefined) data.status = status;
+        if (userId !== undefined && userId) data.userId = userId;
 
         const updatedTask = await prisma.task.update({
             where: { id: params.id },

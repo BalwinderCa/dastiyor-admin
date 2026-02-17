@@ -34,6 +34,9 @@ model User {
   passwordResets  PasswordReset[]
   notifications   Notification[]
   favoriteTasks  TaskFavorite[]
+  payments       Payment[]
+  reportsMade    Report[]         @relation("ReportReporter")
+  reportsAgainst Report[]         @relation("ReportTargetUser")
 }
 
 model Task {
@@ -61,6 +64,7 @@ model Task {
   messages       Message[]
   review         Review?
   favorites      TaskFavorite[]
+  reports        Report[]         @relation("ReportTargetTask")
 }
 
 model Response {
@@ -131,6 +135,7 @@ model Review {
   rating     Int
   comment    String?
   createdAt  DateTime @default(now())
+  hidden     Boolean  @default(false)
 
   reviewerId  String
   reviewer    User   @relation("ReviewsGiven", fields: [reviewerId], references: [id])
@@ -173,4 +178,35 @@ model Category {
   subcategories  String?   // JSON array of subcategory names
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+}
+
+model SystemSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+model Payment {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  amount      Float
+  currency    String   @default("USD")
+  status      String   @default("SUCCEEDED") // e.g. SUCCEEDED, PENDING, FAILED, REFUNDED
+  method      String              // e.g. stripe, paypal, bank
+  description String?
+  createdAt   DateTime @default(now())
+}
+
+model Report {
+  id           String   @id @default(cuid())
+  reporterId   String
+  reporter     User     @relation("ReportReporter", fields: [reporterId], references: [id])
+  targetUserId String?
+  targetUser   User?    @relation("ReportTargetUser", fields: [targetUserId], references: [id])
+  targetTaskId String?
+  targetTask   Task?    @relation("ReportTargetTask", fields: [targetTaskId], references: [id])
+  reason       String
+  status       String   @default("OPEN") // OPEN, RESOLVED, DISMISSED
+  createdAt    DateTime @default(now())
 }

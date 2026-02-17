@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import Card from "@/components/ui/Card";
 import Icon from "@/components/ui/Icon";
 import Modal from "@/components/ui/Modal";
@@ -43,17 +44,33 @@ export default function AdminTasks() {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [statusFilter, setStatusFilter] = useState("");
+  const [categories, setCategories] = useState([]);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [currentTask, setCurrentTask] = useState(null);
-  const [formData, setFormData] = useState({ title: "", description: "", category: "", city: "", status: "OPEN", budgetType: "negotiable", userId: "" });
+  const [formData, setFormData] = useState({
+    title: "",
+    description: "",
+    category: "",
+    subcategory: "",
+    city: "",
+    status: "OPEN",
+    budgetType: "negotiable",
+    budgetAmount: "",
+    dueDate: "",
+    userId: "",
+  });
+  const searchParams = useSearchParams();
 
   const fetchTasks = async () => {
     setLoading(true);
     setError(null);
     try {
       // Fetch larger set for client-side pagination
-      const res = await fetch(`/api/tasks?limit=1000`);
+      const qs = new URLSearchParams({ limit: "1000" });
+      if (statusFilter) qs.set("status", statusFilter);
+      const res = await fetch(`/api/tasks?${qs.toString()}`, { credentials: "include" });
       if (!res.ok) throw new Error(await res.text());
       const json = await res.json();
       setTasks(json.data || []);
@@ -65,12 +82,46 @@ export default function AdminTasks() {
   };
 
   useEffect(() => {
+    const statusFromUrl = searchParams?.get("status");
+    if (statusFromUrl) setStatusFilter(statusFromUrl);
+  }, [searchParams]);
+
+  useEffect(() => {
     fetchTasks();
+  }, [statusFilter]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchCategories() {
+      try {
+        const res = await fetch("/api/categories", { credentials: "include" });
+        if (!res.ok) return;
+        const json = await res.json();
+        if (!cancelled) setCategories(json.data || []);
+      } catch {
+        // ignore categories load error (fallback to text input behavior)
+      }
+    }
+    fetchCategories();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const handleCreate = () => {
     setCurrentTask(null);
-    setFormData({ title: "", description: "", category: "", city: "", status: "OPEN", budgetType: "negotiable", userId: "" });
+    setFormData({
+      title: "",
+      description: "",
+      category: "",
+      subcategory: "",
+      city: "",
+      status: "OPEN",
+      budgetType: "negotiable",
+      budgetAmount: "",
+      dueDate: "",
+      userId: "",
+    });
     setModalOpen(true);
   };
 
@@ -80,9 +131,12 @@ export default function AdminTasks() {
       title: task.title || "",
       description: task.description || "",
       category: task.category || "",
+      subcategory: task.subcategory || "",
       city: task.city || "",
       status: task.status || "OPEN",
       budgetType: task.budgetType || "negotiable",
+      budgetAmount: task.budgetAmount || "",
+      dueDate: task.dueDate ? new Date(task.dueDate).toISOString().slice(0, 10) : "",
       userId: task.userId || ""
     });
     setModalOpen(true);
@@ -239,7 +293,20 @@ export default function AdminTasks() {
       <Card noborder>
         <div className="md:flex justify-between items-center mb-6">
           <Button text="Add Task" className="btn-success btn-sm" onClick={handleCreate} />
-          <GlobalFilter filter={globalFilter} setFilter={setGlobalFilter} />
+          <div className="flex items-center gap-3">
+            <select
+              className="form-control py-2 w-max"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <option value="">All statuses</option>
+              <option value="OPEN">OPEN</option>
+              <option value="IN_PROGRESS">IN_PROGRESS</option>
+              <option value="COMPLETED">COMPLETED</option>
+              <option value="CANCELLED">CANCELLED</option>
+            </select>
+            <GlobalFilter filter={globalFilter} setFilter={setGlobalFilter} />
+          </div>
         </div>
         {loading ? (
           <div className="p-5 text-center">Loading...</div>
@@ -420,14 +487,43 @@ export default function AdminTasks() {
           <Textinput
             label="Category"
             value={formData.category}
-            onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-            placeholder="e.g. Cleaning, Repair"
+            onChange={(e) => setFormData({ ...formData, category: e.target.value, subcategory: "" })}
+            placeholder="Type or pick from list"
           />
+          {categories?.length > 0 && (
+            <Select
+              label="Category (pick)"
+              options={categories.map((c) => c.name)}
+              value={formData.category}
+              onChange={(e) => setFormData({ ...formData, category: e.target.value, subcategory: "" })}
+            />
+          )}
+          {(() => {
+            const cat = categories.find((c) => c.name === formData.category || c.slug === formData.category);
+            if (!cat?.subcategories) return null;
+            let subs = [];
+            try { subs = JSON.parse(cat.subcategories) || []; } catch { subs = []; }
+            if (!Array.isArray(subs) || subs.length === 0) return null;
+            return (
+              <Select
+                label="Subcategory"
+                options={subs}
+                value={formData.subcategory}
+                onChange={(e) => setFormData({ ...formData, subcategory: e.target.value })}
+              />
+            );
+          })()}
           <Textinput
             label="City"
             value={formData.city}
             onChange={(e) => setFormData({ ...formData, city: e.target.value })}
             placeholder="City"
+          />
+          <Textinput
+            label="Budget Amount"
+            value={formData.budgetAmount}
+            onChange={(e) => setFormData({ ...formData, budgetAmount: e.target.value })}
+            placeholder="e.g. 200"
           />
           <Select
             label="Status"
@@ -440,6 +536,12 @@ export default function AdminTasks() {
             options={["fixed", "negotiable"]}
             value={formData.budgetType}
             onChange={(e) => setFormData({ ...formData, budgetType: e.target.value })}
+          />
+          <Textinput
+            label="Due Date"
+            type="date"
+            value={formData.dueDate}
+            onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
           />
           <Textinput
             label="User ID (Owner)"

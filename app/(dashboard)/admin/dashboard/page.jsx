@@ -19,7 +19,7 @@ const AdminDashboard = () => {
     let cancelled = false;
     async function fetchStats() {
       try {
-        const res = await fetch("/api/stats");
+        const res = await fetch("/api/stats", { credentials: "include" });
         if (!res.ok) {
           throw new Error(`Error ${res.status}: ${await res.text()}`);
         }

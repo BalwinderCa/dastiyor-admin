@@ -50,7 +50,7 @@ const Select = ({
             {...rest}
             className={`${
               error ? " has-error" : " "
-            } form-control py-2  appearance-none ${className}  `}
+            } form-control py-2 appearance-none ltr:pr-10 rtl:pl-10 ${className}  `}
             placeholder={placeholder}
             readOnly={readonly}
             disabled={disabled}
@@ -82,7 +82,7 @@ const Select = ({
             onChange={onChange}
             className={`${
               error ? " has-error" : " "
-            } form-control py-2 appearance-none ${className}  `}
+            } form-control py-2 appearance-none ltr:pr-10 rtl:pl-10 ${className}  `}
             placeholder={placeholder}
             readOnly={readonly}
             disabled={disabled}
@@ -111,17 +111,17 @@ const Select = ({
         )}
 
         {/* icon */}
-        <div className="flex text-xl absolute ltr:right-[14px] rtl:left-[14px] top-1/2 -translate-y-1/2  space-x-1 rtl:space-x-reverse">
-          <span className=" relative -right-2 inline-block text-slate-900 dark:text-slate-300 pointer-events-none">
+        <div className="flex items-center text-base absolute ltr:right-3 rtl:left-3 top-1/2 -translate-y-1/2 pointer-events-none">
+          <span className="inline-flex text-slate-500 dark:text-slate-300">
             <Icon icon="heroicons:chevron-down" />
           </span>
           {error && (
-            <span className="text-danger-500">
+            <span className="text-danger-500 ltr:ml-2 rtl:mr-2">
               <Icon icon="heroicons-outline:information-circle" />
             </span>
           )}
           {validate && (
-            <span className="text-success-500">
+            <span className="text-success-500 ltr:ml-2 rtl:mr-2">
               <Icon icon="bi:check-lg" />
             </span>
           )}

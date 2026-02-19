@@ -6,6 +6,7 @@ import { colors } from "@/constant/data";
 
 const DonutChart = ({ height = 113, series = [70, 30], labels = ["Complete", "Left"] }) => {
   const [isDark] = useDarkMode();
+  const chartTextColor = isDark ? "#f8fafc" : "#475569";
 
   function colorOpacity(color, opacity) {
     // coerce values so ti is between 0 and 1.
@@ -39,13 +40,14 @@ const DonutChart = ({ height = 113, series = [70, 30], labels = ["Complete", "Le
               fontSize: "14px",
               fontWeight: "bold",
               fontFamily: "Inter",
-              color: isDark ? "#cbd5e1" : "#475569",
+              color: chartTextColor,
             },
             value: {
               show: true,
               fontSize: "16px",
+              fontWeight: 700,
               fontFamily: "Inter",
-              color: isDark ? "#cbd5e1" : "#475569",
+              color: chartTextColor,
               formatter(val) {
                 // eslint-disable-next-line radix
                 return `${parseInt(val)}`;
@@ -54,8 +56,9 @@ const DonutChart = ({ height = 113, series = [70, 30], labels = ["Complete", "Le
             total: {
               show: true,
               fontSize: "10px",
+              fontWeight: 600,
               label: "",
-              color: isDark ? "#cbd5e1" : "#475569",
+              color: chartTextColor,
               formatter() {
                 return series.reduce((a, b) => a + b, 0);
               },

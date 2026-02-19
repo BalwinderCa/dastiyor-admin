@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useMemo } from "react";
 import Card from "@/components/ui/Card";
 import Icon from "@/components/ui/Icon";
+import Checkbox from "@/components/ui/Checkbox";
 import HomeBredCurbs from "@/components/partials/HomeBredCurbs";
 import GlobalFilter from "@/components/partials/table/GlobalFilter";
 import {
@@ -147,15 +148,11 @@ export default function AdminNotifications() {
         </p>
         <div className="md:flex justify-between items-center mb-6 gap-4 flex-wrap">
           <div className="flex items-center gap-3">
-            <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
-              <input
-                type="checkbox"
-                checked={unreadOnly}
-                onChange={(e) => setUnreadOnly(e.target.checked)}
-                className="rounded border-slate-300"
-              />
-              Unread only
-            </label>
+            <Checkbox
+              label="Unread only"
+              value={unreadOnly}
+              onChange={(e) => setUnreadOnly(e.target.checked)}
+            />
             <GlobalFilter filter={globalFilter} setFilter={setGlobalFilter} />
           </div>
         </div>

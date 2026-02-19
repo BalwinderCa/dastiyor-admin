@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useMemo } from "react";
 import Card from "@/components/ui/Card";
 import Icon from "@/components/ui/Icon";
+import Checkbox from "@/components/ui/Checkbox";
 import HomeBredCurbs from "@/components/partials/HomeBredCurbs";
 import GlobalFilter from "@/components/partials/table/GlobalFilter";
 import {
@@ -198,15 +199,11 @@ export default function AdminReviews() {
       <Card title="Reviews" noborder>
         <div className="md:flex justify-between items-center mb-6">
           <div className="flex items-center gap-3">
-            <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
-              <input
-                type="checkbox"
-                className="rounded border-slate-300"
-                checked={showHidden}
-                onChange={(e) => setShowHidden(e.target.checked)}
-              />
-              Show hidden
-            </label>
+            <Checkbox
+              label="Show hidden"
+              value={showHidden}
+              onChange={(e) => setShowHidden(e.target.checked)}
+            />
             <GlobalFilter filter={globalFilter} setFilter={setGlobalFilter} />
           </div>
         </div>

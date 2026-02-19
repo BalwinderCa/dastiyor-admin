@@ -113,11 +113,12 @@ const Header = ({ className = "custom-class" }) => {
             <HorizentalMenu />
           ) : null}
           {/* Nav Tools  */}
-          <div className="nav-tools flex items-center lg:space-x-6 space-x-3 rtl:space-x-reverse">
+          <div className="nav-tools flex items-center lg:space-x-5 space-x-3 rtl:space-x-reverse">
             <Language />
-            <SwitchDark />
-
-            {width >= breakpoints.md && <Notification />}
+            <div className="flex items-center space-x-1 rtl:space-x-reverse">
+              <SwitchDark />
+              {width >= breakpoints.md && <Notification />}
+            </div>
             {width >= breakpoints.md && <Profile />}
             {width <= breakpoints.md && (
               <div

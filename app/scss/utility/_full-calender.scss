@@ -65,10 +65,16 @@
     @apply bg-slate-50 dark:bg-slate-700  text-xs text-slate-500 dark:text-slate-300 font-normal py-3;
   }
   .fc-daygrid-day-top {
-    @apply text-sm px-3 py-2  text-slate-900 dark:text-white font-normal;
+    @apply text-sm px-3 py-2 text-slate-900 dark:text-white font-normal flex justify-end items-center;
+  }
+  .fc-daygrid-day-number {
+    @apply inline-flex items-center justify-center min-w-[1.75rem] h-7 rounded text-right;
+  }
+  .fc-daygrid-day-events {
+    @apply px-1 pb-1;
   }
   .fc-h-event .fc-event-main-frame {
-    @apply justify-center text-center w-max mx-auto;
+    @apply justify-start text-left w-full mx-0;
     .fc-event-time {
       @apply font-normal flex-none;
     }
@@ -120,6 +126,12 @@
     font-size: 16px;
     font-weight: 500;
   }
+  .fc .fc-list-day-cushion {
+    @apply bg-slate-50 border-y border-slate-200;
+  }
+  .fc .fc-list-day-cushion a {
+    @apply text-slate-700;
+  }
 }
 
 //
@@ -161,6 +173,12 @@
 
   .fc-theme-standard .fc-scrollgrid {
     border-color: #334155 !important;
+  }
+  .fc .fc-list-day-cushion {
+    @apply bg-slate-700 border-slate-600;
+  }
+  .fc .fc-list-day-cushion a {
+    @apply text-slate-200;
   }
 }
 .dastiyor-calender {

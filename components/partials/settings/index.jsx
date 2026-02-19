@@ -33,7 +33,7 @@ const Setings = () => {
         >
           <Icon
             icon="clarity:settings-line"
-            className="text-slate-50 text-lg animate-spin"
+            className="text-slate-50 text-lg"
           />
           <span className="hidden md:inline-block ltr:ml-2 rtl:mr-2">
             Settings
